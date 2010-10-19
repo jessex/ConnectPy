@@ -12,6 +12,12 @@ Game board for reference's sake (7x6 dimensions)
 |               |
 |               |
 -----------------
+
+Flag options for reference's sake
+
+
+
+
 """
 
 #game vars
@@ -41,7 +47,7 @@ def draw_main():
 
 #draw the game board
 def draw_board():
-    board_str = "  0 1 2 3 4 5 6\n-----------------\n"
+    board_str = "\n  0 1 2 3 4 5 6\n-----------------\n"
     for i in range (0, len(board)):
         board_str += "| "
         for j in range(0,7):
@@ -69,14 +75,58 @@ def draw_stats():
 
 """     ***************     PROCESSING FUNCTIONS     ***************     """
 
+#prompt user for input for a number of options ranging from 1 to total_choices
+def prompt_input(prompt, total_choices):
+    while True:
+        try:
+            choice = int(raw_input(prompt))
+        except ValueError: #if users enter a non-integer
+            print "Please enter a valid choice (1-%s)" % total_choices
+            continue
+            
+        if not(choice < (total_choices + 1) and choice > 0):
+            print "Please enter a valid choice (1-%s)" % total_choices
+        else:
+            return choice
+
+#control the flow from the user's choice at the main menu
+def process_main():
+    choice = prompt_input(" > ", 5)
+    print ""
+    if choice == 1: #new game
+        game_loop()
+    elif choice == 2: #statistics
+        draw_stats()
+        draw_main()
+        process_main()
+    elif choice == 3: #settings
+        #process_settings()
+        draw_main()
+        process_main()
+    elif choice == 4: #help
+        #draw_help()
+        draw_main()
+        process_main()
+    elif choice == 5: #exit
+        print "Good bye"
+        sys.exit()
+    else:
+        print "We're not really quite sure what just happened"
+        sys.exit()
+
+#checks the current game board state for any winning sequences of four
+#Example win: row_check = ['row', [0,0,"X"], [0,1,"X"], [0,2,"X"], [0,3,"X"]]
+#returns empty list [] if no winner, returns ["Draw"] if draw
 def check_win():
     row_check = col_check = diag_check = [] #lists of three-length lists
-    #Example win: row_check = [[0,0,"X"], [0,1,"X"], [0,2,"X"], [0,3,"X"]]
+    empty_check = False #flag denoting True if any slots are empty
     
     #checking for win by row
     for i in range(0, len(board)):
         row_check = []
         for j in range(0,7):
+            if board[i][j] == " ": #found at least one empty slot, see below
+                empty_check = True
             if j > 0: 
                 if board[i][j] == board[i][j-1] and board[i][j] != " ":
                     prev = [i,j-1, board[i][j]]
@@ -91,6 +141,7 @@ def check_win():
                         return winner
                 else: #current row_check is broken, start it over
                     row_check = []
+                    
     #checking for win by column   
     for j in range(0,7):
         col_check = []
@@ -113,12 +164,97 @@ def check_win():
                     if prev in col_check:
                         col_check = []
             
-            
-          
-    return [] #no winner returned yet, return empty list
+    #checking for win by diagonal (very sneaky, sis)
+    for i in range(0, len(board)):
+        for j in range(0,7):
+            try: #try to go down and to the left
+                if board[i][j] == board[i+1][j+1] and board[i][j] != " ":
+                    flag = True
+                    for a in range(2,4): #check if two more consecutively
+                        if board[i][j] != board[i+a][j+a]:
+                            flag = False
+                            break
+                    if flag: #got 4 consecutively, prepare our 
+                        diag_check = []
+                        for b in range(0,4):
+                            diag_check.append([(i+b),(j+b),board[i][j]])
+                        winner = ["diag", diag_check]
+                        return winner
+            except IndexError: #if we go beyond bounds of table
+                 pass
+            try: #try to go down and to the right
+                if board[i][j] == board[i+1][j-1] and board[i][j] != " " and j>0:
+                    flag = True
+                    for a in range(2,4):
+                        if board[i][j] != board[i+a][j-a] or j-a < 0:
+                            flag = False
+                            break
+                    if flag:
+                        diag_check = []
+                        for b in range(0,4):
+                            diag_check.append([(i+b),(j-b),board[i][j]])
+                        winner = ["diag", diag_check]
+                        return winner
+            except IndexError:
+                 continue         
+    
+    if empty_check:
+        return [] #no winner returned yet, board not full, return empty list
+    else:
+        return ["Draw"] #no winner yet, board full, return "Draw" inside list
+    
+#process the results of the game and congratulate the winner
+def process_result(winlist):
+    global x_wins, o_wins, draws, games_played
+    print winlist
+    if len(winlist) == 1:
+        draws += 1.0
+        current = draws
+        winner = "Draw"
+    else:
+        winner = winlist[1][0][2]
+        print winner
+        if winner == "X":
+            x_wins += 1.0
+            current = x_wins
+        elif winner == "O":
+            o_wins += 1.0
+            current = o_wins
+        else:
+            print "We're not really quite sure what just happened!!"
+            return
+    
+    games_played += 1.0
+    draw_board()
+    
+    if winner == starting_player:
+        player = "Player 1"
+    else:
+        player = "Player 2"
+    if winner == "Draw":
+        print "It's a draw! There have been %s draw(s) in this session!" % int(current)
+    else:
+        print "Congratulations %s! %s wins!" % (player, winner)
+        print "%s has now won %s game(s) in this session!" % (winner, int(current))
+        
+        
+    
+#switches whose turn it is
+def switch_turn():
+    global active_player
+    if active_player == "X":
+        active_player = "O"
+    elif active_player == "O":
+        active_player = "X"
     
     
 """     ***************     GAME FUNCTIONS     ***************     """
+    
+#reset game variables for a new match
+def reset_game():
+    global board, active_player
+    active_player = starting_player
+    initialize_board()
     
 #reset the game board to its initial state
 def initialize_board():
@@ -135,27 +271,55 @@ def insert_piece(column, piece):
             return True #successful insert, return true
     return False #never inserted, column must be full, return false
             
-    
-    
-    
+#control loop of an actual tic tac toe game
+def game_loop():
+    global active_player
+    active_player = starting_player
+    finished = False
+    #takes care of processing for one full game
+    while not(finished):
+        draw_board()
+        flag = False
+        while not(flag):
+            try:
+                column = int(raw_input("Pick a column (0-6) or 7 to quit\n %s > " % active_player))
+            except ValueError: #if users enter a non-integer
+                print "Invalid input"
+                continue
+                
+            if not(column < 8 and column > -1):
+                    print "Invalid input"
+            else:
+                if column == 7: #chose 9 to quit
+                    print "Quitting current game"
+                    reset_game()
+                    draw_main()
+                    process_main()
+                else: #chose a column (0-6)
+                    if insert_piece(column, active_player):
+                        flag = True
+                    else:
+                        print "Column is already filled to the top"
+        #have a valid pick at this point
+        winlist = check_win()
+        if winlist == []:
+            switch_turn()
+        else:
+            finished = True
+            
+    process_result(winlist)
+    reset_game()
+    draw_main()
+    process_main()
+
     
     
 """     ***************     MAIN     ***************     """
        
 if __name__ == "__main__":
     initialize_board()
-    flag = True
-    while (flag):
-        if active_player == "X":
-            active_player = "O"
-        else:
-            active_player = "X" 
-        draw_board()
-        insert_piece((int(raw_input(" > "))), active_player)
-        winner = check_win()
-        if winner != []:
-            flag = False
-    print winner
+    draw_main()
+    process_main()
         
     
     
