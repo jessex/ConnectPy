@@ -167,7 +167,7 @@ def check_win():
     #checking for win by diagonal (very sneaky, sis)
     for i in range(0, len(board)):
         for j in range(0,7):
-            try: #try to go down and to the left
+            try: #try to go down and to the right
                 if board[i][j] == board[i+1][j+1] and board[i][j] != " ":
                     flag = True
                     for a in range(2,4): #check if two more consecutively
@@ -182,7 +182,7 @@ def check_win():
                         return winner
             except IndexError: #if we go beyond bounds of table
                  pass
-            try: #try to go down and to the right
+            try: #try to go down and to the left
                 if board[i][j] == board[i+1][j-1] and board[i][j] != " " and j>0:
                     flag = True
                     for a in range(2,4):
