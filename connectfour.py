@@ -1,5 +1,6 @@
 import string, sys, random
 from sys import argv
+import boardstate
 
 """
 Game board for reference's sake (7x6 dimensions)
@@ -22,6 +23,7 @@ Flag options for reference's sake
 
 #game vars
 board = [[],[],[],[],[],[]]
+column_drops = []
 starting_player = "O"
 active_player = "O"
 comp_player = "X"
@@ -258,17 +260,18 @@ def reset_game():
     
 #reset the game board to its initial state
 def initialize_board():
-    global board
+    global board, column_drops
     for i in range(0, len(board)):
         board[i] = [" ", " ", " ", " ", " ", " ", " "]
+    column_drops = [0,0,0,0,0,0,0]
     
 #attempt to insert a piece into a column, returns true if successful
 def insert_piece(column, piece):
-    global board
-    for i in range (0, len(board)):
-        if board[5-i][column] == " ":
-            board[5-i][column] = piece
-            return True #successful insert, return true
+    global board, column_drops
+    if column_drops[column] < 6:
+        column_drops[column] += 1
+        board[6-column_drops[column]][column] = piece
+        return True #successful insert, return true
     return False #never inserted, column must be full, return false
             
 #control loop of an actual tic tac toe game
@@ -320,6 +323,6 @@ if __name__ == "__main__":
     initialize_board()
     draw_main()
     process_main()
-        
+    
     
     
