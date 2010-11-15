@@ -15,9 +15,12 @@ class BoardState:
     def init_new(self):
         """ Constructs a new BoardState with empty data. """
         self.board = [[],[],[],[],[],[]] #current board state
+        for i in range(0, len(self.board)): #initialize board
+            self.board[i] = [" ", " ", " ", " ", " ", " ", " "]
         self.move_count = 0     #amount of moves made since start of state
         self.column_drops = [0,0,0,0,0,0,0] #amount of dropped pieces per column
         self.active_player = "" #player whose turn it is
+        self.successors = {} #dictionary of possible successor states
     
     def init_from_old(self, old_board):
         """ Constructs a new BoardState based upon an older BoardState. """
@@ -25,11 +28,12 @@ class BoardState:
         self.move_count = old_board.move_count
         self.column_drops = old_board.column_drops
         self.active_player = old_board.active_player
+        self.successors = {}
         
       
     def make_move(self, column, board_state):
-        """ Makes the passed column move on the passed in board state and
-            returns the new board state, with the old board state unaltered. """
+        """ Makes the passed column move on the passed board state and
+            returns the new BoardState, with the old BoardState unaltered. """
         new_state = deepcopy(board_state) #deep copy of pre-move BoardState
         
         if new_state.column_drops[column] == 6: #column is full, cannot move

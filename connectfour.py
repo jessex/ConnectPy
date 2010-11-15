@@ -1,6 +1,7 @@
 import string, sys, random
 from sys import argv
-import boardstate
+from copy import deepcopy
+import boardstate, checkwin, aimodule
 
 """
 Game board for reference's sake (7x6 dimensions)
@@ -22,11 +23,13 @@ Flag options for reference's sake
 """
 
 #game vars
-board = [[],[],[],[],[],[]]
-column_drops = []
-starting_player = "O"
-active_player = "O"
-comp_player = "X"
+board = [[],[],[],[],[],[]]                 #current game board
+column_drops = []                           #amount of pieces per column
+current_state = boardstate.BoardState()     #current board/game state
+starting_player = "O"                       #starting player, default is "O"
+active_player = "O"                         #current player whose turn it is
+comp_player = "X"                           #computer player, always "X"
+game_type = 2                               #amount of players, default is 2
 
 #session vars
 games_played = 0.0
@@ -77,6 +80,55 @@ def draw_stats():
 
 """     ***************     PROCESSING FUNCTIONS     ***************     """
 
+#process the command line argmuents
+def process_args(args):
+    global game_type, starting_player
+    del args[0] #remove the script name (connectfour.py)
+    
+    #iterate through command line arguments
+    for i in range(0,len(args)):
+        if args[i] == "--help": #help command
+            draw_help()
+            sys.exit()
+        elif args[i] == "-p": #game type command
+            if int(args[i+1]) == 1 or int(args[i+1]) == 2: 
+                game_type = int(args[i+1])
+            else:
+                print "Command '-p' must be followed by 1 or 2"
+        elif args[i] == "-f": #starting player command
+            if args[i+1] == "X" or args[i+1] == "x":
+                starting_player = "X"
+            elif args[i+1] == "O" or args[i+1] == "o":
+                starting_player = "O"
+            else:
+                print "Command '-f' must be followed by X or O"
+
+#prints the settings menu and controls changes made herein
+def process_settings():
+    global game_type, starting_player
+    print """
+    Choose a selection:
+    
+    1. Player Count         [Currently %s]
+    2. Starting Player      [Currently %s]
+    3. Return to main menu
+    """ % (game_type, starting_player)
+    choice = prompt_input(" > ", 3)
+    if choice == 1:
+        game_type = prompt_input("Player total: ", 2)
+    elif choice == 2:
+        valid = False
+        while valid == False:
+            player = raw_input("Starting player: ")
+            if player == "X" or player == "x":
+                starting_player = "X"
+                valid = True
+            elif player == "O" or player == "o":
+                starting_player = "O"
+                valid = True
+            else:
+                print "Please enter a valid choice (X or O)"
+
 #prompt user for input for a number of options ranging from 1 to total_choices
 def prompt_input(prompt, total_choices):
     while True:
@@ -102,7 +154,7 @@ def process_main():
         draw_main()
         process_main()
     elif choice == 3: #settings
-        #process_settings()
+        process_settings()
         draw_main()
         process_main()
     elif choice == 4: #help
@@ -115,95 +167,6 @@ def process_main():
     else:
         print "We're not really quite sure what just happened"
         sys.exit()
-
-#checks the current game board state for any winning sequences of four
-#Example win: row_check = ['row', [0,0,"X"], [0,1,"X"], [0,2,"X"], [0,3,"X"]]
-#returns empty list [] if no winner, returns ["Draw"] if draw
-def check_win():
-    row_check = col_check = diag_check = [] #lists of three-length lists
-    empty_check = False #flag denoting True if any slots are empty
-    
-    #checking for win by row
-    for i in range(0, len(board)):
-        row_check = []
-        for j in range(0,7):
-            if board[i][j] == " ": #found at least one empty slot, see below
-                empty_check = True
-            if j > 0: 
-                if board[i][j] == board[i][j-1] and board[i][j] != " ":
-                    prev = [i,j-1, board[i][j]]
-                    curr = [i,j, board[i][j]]
-                    #place them both into row_check
-                    if not(prev in row_check):
-                        row_check.append(prev)
-                    row_check.append(curr)
-                    #if we now have at least 4 in row_check, it's a winner
-                    if len(row_check) > 3:
-                        winner = ["row", row_check]
-                        return winner
-                else: #current row_check is broken, start it over
-                    row_check = []
-                    
-    #checking for win by column   
-    for j in range(0,7):
-        col_check = []
-        for i in range(0, len(board)):
-            if i > 0:
-                if board[i-1][j] == board[i][j] and board [i][j] != " ":
-                    prev = [i-1,j, board[i][j]]
-                    curr = [i,j, board[i][j]]
-                    if not(prev in col_check):
-                        col_check.append(prev)
-                    col_check.append(curr)
-                    if len(col_check) > 3:
-                        winner = ["col", col_check]
-                        return winner
-                else:
-                    prev = [i-1,j, "O"]
-                    if prev in col_check: #prev was in col_check but not this
-                        col_check = []
-                    prev = [i-1,j, "X"]
-                    if prev in col_check:
-                        col_check = []
-            
-    #checking for win by diagonal (very sneaky, sis)
-    for i in range(0, len(board)):
-        for j in range(0,7):
-            try: #try to go down and to the right
-                if board[i][j] == board[i+1][j+1] and board[i][j] != " ":
-                    flag = True
-                    for a in range(2,4): #check if two more consecutively
-                        if board[i][j] != board[i+a][j+a]:
-                            flag = False
-                            break
-                    if flag: #got 4 consecutively, prepare our 
-                        diag_check = []
-                        for b in range(0,4):
-                            diag_check.append([(i+b),(j+b),board[i][j]])
-                        winner = ["diag", diag_check]
-                        return winner
-            except IndexError: #if we go beyond bounds of table
-                 pass
-            try: #try to go down and to the left
-                if board[i][j] == board[i+1][j-1] and board[i][j] != " " and j>0:
-                    flag = True
-                    for a in range(2,4):
-                        if board[i][j] != board[i+a][j-a] or j-a < 0:
-                            flag = False
-                            break
-                    if flag:
-                        diag_check = []
-                        for b in range(0,4):
-                            diag_check.append([(i+b),(j-b),board[i][j]])
-                        winner = ["diag", diag_check]
-                        return winner
-            except IndexError:
-                 continue         
-    
-    if empty_check:
-        return [] #no winner returned yet, board not full, return empty list
-    else:
-        return ["Draw"] #no winner yet, board full, return "Draw" inside list
     
 #process the results of the game and congratulate the winner
 def process_result(winlist):
@@ -238,8 +201,6 @@ def process_result(winlist):
     else:
         print "Congratulations %s! %s wins!" % (player, winner)
         print "%s has now won %s game(s) in this session!" % (winner, int(current))
-        
-        
     
 #switches whose turn it is
 def switch_turn():
@@ -260,10 +221,12 @@ def reset_game():
     
 #reset the game board to its initial state
 def initialize_board():
-    global board, column_drops
+    global board, column_drops, current_state
     for i in range(0, len(board)):
         board[i] = [" ", " ", " ", " ", " ", " ", " "]
     column_drops = [0,0,0,0,0,0,0]
+    current_state = boardstate.BoardState()
+    current_state.active_player = starting_player
     
 #attempt to insert a piece into a column, returns true if successful
 def insert_piece(column, piece):
@@ -276,35 +239,49 @@ def insert_piece(column, piece):
             
 #control loop of an actual tic tac toe game
 def game_loop():
-    global active_player
+    global active_player, current_state
     active_player = starting_player
     finished = False
     #takes care of processing for one full game
     while not(finished):
         draw_board()
         flag = False
-        while not(flag):
-            try:
-                column = int(raw_input("Pick a column (0-6) or 7 to quit\n %s > " % active_player))
-            except ValueError: #if users enter a non-integer
-                print "Invalid input"
-                continue
-                
-            if not(column < 8 and column > -1):
-                    print "Invalid input"
+        #if Human v Comp and it's comp's turn
+        if game_type == 1 and active_player == comp_player:
+            print "Computer is thinking..."
+            column = aimodule.generate_move(current_state)
+            if column == -1:
+                print "Computer doesn't know where to go!"
             else:
-                if column == 7: #chose 9 to quit
-                    print "Quitting current game"
-                    reset_game()
-                    draw_main()
-                    process_main()
-                else: #chose a column (0-6)
-                    if insert_piece(column, active_player):
-                        flag = True
-                    else:
-                        print "Column is already filled to the top"
+                print "Computer moves to column %s" % column
+                insert_piece(column, active_player)
+                new_state = current_state.make_move(column, current_state)
+                current_state = deepcopy(new_state)
+        else:
+            while not(flag):
+                try:
+                    column = int(raw_input("Pick a column (0-6) or 7 to quit\n %s > " % active_player))
+                except ValueError: #if users enter a non-integer
+                    print "Invalid input"
+                    continue
+                    
+                if not(column < 8 and column > -1):
+                        print "Invalid input"
+                else:
+                    if column == 7: #chose 9 to quit
+                        print "Quitting current game"
+                        reset_game()
+                        draw_main()
+                        process_main()
+                    else: #chose a column (0-6)
+                        if insert_piece(column, active_player):
+                            flag = True
+                            new_state = current_state.make_move(column, current_state)
+                            current_state = deepcopy(new_state)
+                        else:
+                            print "Column is already filled to the top"
         #have a valid pick at this point
-        winlist = check_win()
+        winlist = checkwin.check_win(board)
         if winlist == []:
             switch_turn()
         else:
