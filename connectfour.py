@@ -17,8 +17,10 @@ Game board for reference's sake (7x6 dimensions)
 
 Flag options for reference's sake
 
-
-
+--help          -->  displays help text and exits
+-p [1/2]        -->  sets game as 1 or 2 players
+-f [X/x/O/o]    -->  sets whether X or O starts the game
+-d [1-4]        -->  sets difficulty level of AI (between 1 and 4)
 
 """
 
@@ -76,7 +78,7 @@ def draw_stats():
     res += "Games: %s\n" % int(games_played)
     res += "X wins: %s , %s%%\n" % (int(x_wins), x_per)
     res += "O wins: %s , %s%%\n" % (int(o_wins), o_per)
-    res += "Draws: %s , %s%%" % (int(draws), d_per)
+    res += "Draws:  %s , %s%%" % (int(draws), d_per)
     print res
     
 
@@ -84,7 +86,7 @@ def draw_stats():
 
 #process the command line argmuents
 def process_args(args):
-    global game_type, starting_player
+    global game_type, starting_player, ai_diff
     del args[0] #remove the script name (connectfour.py)
     
     #iterate through command line arguments
@@ -104,6 +106,11 @@ def process_args(args):
                 starting_player = "O"
             else:
                 print "Command '-f' must be followed by X or O"
+        elif args[i] == "-d": #ai difficulty command
+            if int(args[i+1]) > 0 and int(args[i+1]) < 5:
+                ai_diff = int(args[i+1])
+            else:
+                print "Command '-d' must be followed by number between 1-4"
 
 #prints the settings menu and controls changes made herein
 def process_settings():
