@@ -26,10 +26,12 @@ Flag options for reference's sake
 board = [[],[],[],[],[],[]]                 #current game board
 column_drops = []                           #amount of pieces per column
 current_state = boardstate.BoardState()     #current board/game state
-starting_player = "O"                       #starting player, default is "O"
-active_player = "O"                         #current player whose turn it is
+starting_player = "X"                       #starting player, default is "O"
+active_player = "X"                         #current player whose turn it is
 comp_player = "X"                           #computer player, always "X"
 game_type = 2                               #amount of players, default is 2
+ai_diff = 1                                 #difficulty level of the AI
+
 
 #session vars
 games_played = 0.0
@@ -105,15 +107,16 @@ def process_args(args):
 
 #prints the settings menu and controls changes made herein
 def process_settings():
-    global game_type, starting_player
+    global game_type, starting_player, active_player, ai_diff
     print """
     Choose a selection:
     
     1. Player Count         [Currently %s]
     2. Starting Player      [Currently %s]
-    3. Return to main menu
-    """ % (game_type, starting_player)
-    choice = prompt_input(" > ", 3)
+    3. AI Difficulty        [Currently %s]
+    4. Return to main menu
+    """ % (game_type, starting_player, ai_diff)
+    choice = prompt_input(" > ", 4)
     if choice == 1:
         game_type = prompt_input("Player total: ", 2)
     elif choice == 2:
@@ -121,13 +124,15 @@ def process_settings():
         while valid == False:
             player = raw_input("Starting player: ")
             if player == "X" or player == "x":
-                starting_player = "X"
+                starting_player = active_player = "X"
                 valid = True
             elif player == "O" or player == "o":
-                starting_player = "O"
+                starting_player = active_player = "O"
                 valid = True
             else:
                 print "Please enter a valid choice (X or O)"
+    elif choice == 3:
+        ai_diff = prompt_input("AI Difficulty (1-4): ", 4)
 
 #prompt user for input for a number of options ranging from 1 to total_choices
 def prompt_input(prompt, total_choices):
@@ -226,7 +231,6 @@ def initialize_board():
         board[i] = [" ", " ", " ", " ", " ", " ", " "]
     column_drops = [0,0,0,0,0,0,0]
     current_state = boardstate.BoardState()
-    current_state.active_player = starting_player
     
 #attempt to insert a piece into a column, returns true if successful
 def insert_piece(column, piece):
@@ -237,11 +241,13 @@ def insert_piece(column, piece):
         return True #successful insert, return true
     return False #never inserted, column must be full, return false
             
-#control loop of an actual tic tac toe game
+#control loop of an actual connect4 game
 def game_loop():
     global active_player, current_state
     active_player = starting_player
     finished = False
+    first_ai = True
+    col_ai = next_ai = 3
     #takes care of processing for one full game
     while not(finished):
         draw_board()
@@ -249,14 +255,17 @@ def game_loop():
         #if Human v Comp and it's comp's turn
         if game_type == 1 and active_player == comp_player:
             print "Computer is thinking..."
-            column = aimodule.generate_move(current_state)
-            if column == -1:
-                print "Computer doesn't know where to go!"
+            if first_ai == True: #computer takes middle column each time
+                col_ai = 3
+                first_ai = False
             else:
-                print "Computer moves to column %s" % column
-                insert_piece(column, active_player)
-                new_state = current_state.make_move(column, current_state)
-                current_state = deepcopy(new_state)
+                (value, col_ai, next_ai) = aimodule.generate_move(current_state, 0, ai_diff, float("-inf"), float("inf"), next_ai, True)
+                temp = current_state.copy_board()
+                while temp.make_move(col_ai, "X") == False: #check move validity
+                    col_ai +=  1
+            print "Computer moves to column %s" % col_ai
+            current_state.make_move(col_ai, "X")
+            insert_piece(col_ai, active_player)
         else:
             while not(flag):
                 try:
@@ -276,8 +285,8 @@ def game_loop():
                     else: #chose a column (0-6)
                         if insert_piece(column, active_player):
                             flag = True
-                            new_state = current_state.make_move(column, current_state)
-                            current_state = deepcopy(new_state)
+                            current_state.make_move(column, "O")
+                            col_ai = column
                         else:
                             print "Column is already filled to the top"
         #have a valid pick at this point
@@ -297,6 +306,7 @@ def game_loop():
 """     ***************     MAIN     ***************     """
        
 if __name__ == "__main__":
+    process_args(argv)
     initialize_board()
     draw_main()
     process_main()
