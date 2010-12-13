@@ -1,6 +1,6 @@
 def check_win(board):
     """ Checks the current game board state for any winning sequences of four.
-        Win ex: row_check = ['row', [0,0,"X"], [0,1,"X"], [0,2,"X"], [0,3,"X"]].
+        Win ex: row_check = ['row', [[0,0,"X"], [0,1,"X"], [0,2,"X"], [0,3,"X"]]].
         Returns empty list [] if no winner, returns ["Draw"] if draw. """
     row_check = col_check = diag_check = [] #lists of three-length lists
     empty_check = False #flag denoting True if any slots are empty
