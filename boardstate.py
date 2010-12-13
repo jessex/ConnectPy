@@ -42,11 +42,12 @@ class BoardState:
     #determines the current finishing state of the board
     def board_win(self):
         winner = check_win(self.board)
+        print winner
         if winner == []: #Empty list means not finished
             return 0
         elif winner[0] == "Draw": #Draw
             return 0
-        elif winner[1][2] == "X": #"X" wins (AI)
+        elif winner[1][0][2] == "X": #"X" wins (AI)
             return 1
         else: #"O" wins (human)
             return -1
