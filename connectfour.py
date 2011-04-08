@@ -190,7 +190,6 @@ def process_result(winlist):
         winner = "Draw"
     else:
         winner = winlist[1][0][2]
-        print winner
         if winner == "X":
             x_wins += 1.0
             current = x_wins
