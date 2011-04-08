@@ -1,0 +1,64 @@
+DESCRIPTION
+
+ConnectPy is a simple Connect Four game which supports two player games (human 
+versus human) and one player games (human versus computer). Note that in one
+player games, the human plays as ) and the computer plays as X. The player may 
+choose the difficulty level of the AI, between 1 and 4, where the difficulty 
+level corresponds to how many moves the AI looks ahead in the game state. You 
+can change game settings both in game or through command line arguments.
+
+INSTRUCTIONS
+
+Grab the four source files: aimodule.py, boardstate.py, checkwin.py and 
+connectfour.py and place them in the same directory. Then navigate to the 
+directory and call:
+
+$ python connectfour.py [arguments]
+
+ARGUMENTS
+
+--help                  Displays this Help text
+-p [1/2]                Sets game as 1 or 2 players
+                        Note: game defaults to 1 player
+-f [X/x/O/o]            Sets whether X or O starts the game
+                        Note: game defaults to X starting
+-d [1-4]                sets difficulty level of AI (between 1 and 4)
+                        Note: game defaults to lowest difficulty (1)
+
+EXAMPLES
+
+$ python connectfour.py -p 1 -f O
+This will launch with a human versus computer play type and O starting.
+
+$ python connectfour.py
+This will launch with a human versus human play type and X starting.
+
+For actual gameplay, the player(s) take turns entering the number of the column
+that they wish to place their piece in. The game board is printed as such:
+
+  0 1 2 3 4 5 6
+-----------------
+|               |
+|               |
+|               |
+|               |
+|               |
+|               |
+-----------------
+
+An actual game in progress may look something like this:
+
+  0 1 2 3 4 5 6
+-----------------
+|               |
+|     X   X     |
+|     X O O O   |
+|   O O O X O O |
+|   O X X O X X |
+| X X O X X X O |
+-----------------
+
+Pick a column (0-6) or 7 to quit
+ O > 
+
+
